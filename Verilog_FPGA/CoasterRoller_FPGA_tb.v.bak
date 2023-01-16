@@ -1,0 +1,137 @@
+module Nhung
+    (
+    input CLOCK_50,
+	input SW0,//i_rst,               //button
+	input SW1,   // button
+	
+	
+// LED7 for weight
+    output [6 : 0] HEX0,
+	output [6 : 0] HEX1,
+    output [6 : 0] HEX2,
+    output [6 : 0] HEX3,
+// LED7 for speed
+    output [6 : 0] HEX4,
+    output [6 : 0] HEX5,
+
+// LED7 for state
+    output [6 : 0] HEX6,
+	
+// den
+	output  LEDR1,      // LIGHT
+    output LEDR2,
+	output reg LEDR3,
+	output reg LCD_RS,//rslcd,
+	output reg LCD_EN,
+	output reg [7 : 0] LCD_DATA
+	);
+	reg [11 : 0] i_weight;   //  show LED4
+	reg [8 : 0] i_speed; // LED_2
+	reg [4 : 0] i_ir_sensor;  //
+	reg i_clk;
+	reg [10:0] weightmem [1:0];
+	reg [8:0] speedmem [9:0];
+	reg [4:0] statemem [5:0];
+	reg [3 : 0] i, j, k;
+	reg [2 : 0] o_state;
+	reg [2 : 0] o_speed_control;
+	reg [8 : 0] o_f_day;             // LIGHT
+	reg [8 : 0] o_f_ham;            // LIGHT
+	reg c1, c2, c3;
+	reg alarm_signal = {LEDR1, LEDR2};
+	initial
+	    begin
+		    weightmem[0] = 11'd2000;
+			weightmem[1] = 11'd700;
+			
+			speedmem [0] = 9'd10;
+			speedmem [1] = 9'd35;	
+			speedmem [2] = 9'd23;
+			speedmem [3] = 9'd79;
+			speedmem [4] = 9'd12;
+			speedmem [5] = 9'd34;
+			speedmem [6] = 9'd45;
+			speedmem [7] = 9'd12;
+			speedmem [8] = 9'd30;
+			speedmem [9] = 9'd10;
+			
+			statemem[0] = 5'b00000;
+			statemem[1] = 5'b00001;			
+			statemem[2] = 5'b00010;
+			statemem[3] = 5'b00100;
+			statemem[4] = 5'b01000;
+			statemem[5] = 5'b10000;
+		end
+// display state
+    LED7 led31
+	(
+	.BCD(i_ir_sensor),
+	.led(led31)
+	);
+// display speed
+    LED7 led21
+	(
+	);
+// display weight
+    LED led11
+    (
+    );
+  
+// clock devider
+    clock_devider cuut
+	(
+	.clk50M(CLOCK_50),
+	.rst(SW0),
+	.i_clk(i_clk)
+	);
+// roller coaster
+    RollerCoaster ruut
+	(
+	.i_clk(i_clk),
+	.i_rst(SW0),
+	.i_weight(i_weight),
+	.i_human_control(SW1),
+	.i_speed(i_speed),
+	.i_ir_sensor(i_ir_sensor),
+	.o_speed_control(o_speed_control),
+	.o_state(o_state),
+	.o_alarm_signal(alarm_signal),
+	.o_f_day(o_f_day),
+	.o_f_ham(o_f_ham),
+	.o_destination(LEDR3)
+	);
+	
+	lcd_fpga lcduut
+	(
+	.clk(CLOCK_50),
+	.rst(SW0),
+	.start(1),
+	.rs(LCD_RS),
+	.en(LCD_EN),
+	.lcd_data(LCD_DATA)
+	);
+	// radom value
+	always @(negedge CLOCK_50)
+	begin
+	for (i = 0 ; i < 2 ; i = i + 1)
+	    begin
+		   
+		    @(negedge i_clk) i_weight <= weightmem[i];
+		end
+	
+	for (j = 0; j < 10; j = j + 1)
+	    begin
+		    @(negedge i_clk) i_speed <= speedmem[j];
+		end
+	for (k = 0; k < 6; k = k + 1)
+	    begin
+		    @(negedge i_clk) i_ir_sensor <= statemem[k];
+		end
+	end
+endmodule
+
+//  send speed up signal
+// sentsen speed down
+
+
+
